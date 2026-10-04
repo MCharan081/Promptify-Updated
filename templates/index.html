@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Promptify Framework</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root, [data-theme="light"] {
+  --bg: #ffffff;
+  --sidebar-bg: #f3f4f6;
+  --card: #f9fafb;
+  --border: #e5e7eb;
+  --black: #111111;
+  --gray: #6b7280;
+  --teal: #0d9488;
+  --teal-s: rgba(13,148,136,.1);
+  --green: #16a34a;
+  --input: #ffffff;
+}
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --sidebar-bg: #1e293b;
+  --card: #1e293b;
+  --border: #334155;
+  --black: #f8fafc;
+  --gray: #94a3b8;
+  --teal: #2dd4bf;
+  --teal-s: rgba(45,212,191,.1);
+  --green: #4ade80;
+  --input: #0f172a;
+}
+
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--black);min-height:100vh;display:flex;transition:all 0.2s}
+
+.auth-container {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  z-index: 2000; padding: 20px;
+}
+.auth-card {
+  background: var(--card); border: 1px solid var(--border);
+  padding: 32px; border-radius: 12px; width: 100%; max-width: 420px;
+}
+.auth-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; text-align: center; }
+
+.auth-card input, .auth-card select {
+  width: 100%; font-family: inherit; font-size: 14px; color: var(--black); background: var(--input); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; outline: none;
+}
+
+.pass-container { position: relative; display: flex; align-items: center; width: 100%; }
+.pass-container input { padding-right: 40px; }
+.eye-toggle { position: absolute; right: 14px; color: var(--gray); cursor: pointer; font-size: 15px; }
+
+.pswd-strength-text {
+  font-size: 11px; font-weight: 600; margin-top: 5px; display: block; color: var(--gray);
+}
+
+.forgot-link { display: block; text-align: right; margin-top: 8px; font-size: 13px; color: var(--gray); cursor: pointer; text-decoration: none; }
+.forgot-link:hover { color: var(--black); }
+
+.auth-toggle-link { color: #6B7280 !important; cursor: pointer; font-size: 14px; text-align: center; display: block; margin-top: 14px; text-decoration: none; }
+.auth-toggle-link span { text-decoration: underline; }
+
+.welcome-banner { font-size: 18px; font-weight: 600; color: #374151; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
+
+/* Gamification Bar Styling */
+.gamification-bar {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; align-items: center; justify-content: space-between;
+}
+.g-stat { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--black); }
+
+.sidebar {
+  width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0;
+  padding: 24px 16px; z-index: 100;
+}
+.logo { display: flex; align-items: center; margin-bottom: 32px; padding-left: 8px; font-size: 22px; font-weight: 700; }
+
+.nav-links { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; width: 100%; background: none; border: none;
+  padding: 12px 14px; border-radius: 8px; cursor: pointer; color: var(--gray);
+  font-family: inherit; font-size: 14px; font-weight: 500; text-align: left; transition: all .2s;
+}
+.nav-item i { width: 20px; font-size: 16px; margin-right: 10px; }
+.nav-item:hover { color: var(--black); background: var(--border); }
+.nav-item.active { color: var(--teal); background: var(--teal-s); font-weight: 600; }
+.nav-title { display: flex; align-items: center; flex: 1; }
+.nav-cnt { font-size: 11px; font-weight: 700; background: var(--border); color: var(--gray); padding: 2px 6px; border-radius: 10px; margin-left: auto; }
+.nav-item.active .nav-cnt { background: var(--teal); color: var(--bg); }
+
+.main-content { margin-left: 260px; flex: 1; padding: 40px; max-width: 900px; }
+.view-panel { display: none; }
+.view-panel.active { display: block; animation: fi .25s ease; }
+
+.sec { margin-bottom: 20px; position: relative; }
+.lbl-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin: 0; }
+.char-counter { font-size: 11px; font-weight: 600; color: var(--gray); font-family: 'JetBrains Mono', monospace; }
+
+select, textarea, input { width: 100%; font-family: inherit; font-size: 14px; color: var(--black); background: var(--input); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; outline: none; }
+textarea { resize: vertical; min-height: 120px; }
+
+/* Modified category style to light green border */
+#cat { border: 1.5px solid #86efac !important; }
+#inp { border: 1.5px solid #4b5563 !important; }
+
+.btn-row { display: flex; gap: 12px; margin-bottom: 24px; }
+.btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all .2s; }
+.btn-p { background: var(--teal); color: var(--bg); }
+.btn-s { background: var(--card); color: var(--black); border: 1px solid var(--border); }
+.btn-s:hover { background: var(--border); }
+
+/* Updated bottom output area styled like "Your Prompt Idea" */
+.result-box-container { width: 100%; min-height: 120px; border: 1.5px solid #4b5563; border-radius: 8px; background: var(--input); padding: 12px 14px; }
+.card { background: transparent; border: none; padding: 0; margin-bottom: 0; }
+.ph { color: var(--gray); font-style: italic; font-size: 14px; }
+.rt { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: var(--black); white-space: pre-wrap; word-wrap: break-word; background: transparent; border: none; padding: 0; display: none; }
+.meta { display: flex; align-items: center; gap: 8px; margin-top: 12px; display: none; }
+.badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; padding: 3px 9px; border-radius: 99px; }
+.b-gen { background: #dbeafe; color: #2563eb; }
+.b-enh { background: #dcfce7; color: #16a34a; }
+.b-cat { background: var(--teal-s); color: var(--teal); }
+
+.acts { display: flex; gap: 8px; margin-bottom: 24px; margin-top: 16px; }
+.btn-g { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; cursor: pointer; background: var(--input); color: var(--gray); }
+.btn-g:hover { color: var(--black); border-color: var(--gray); }
+
+.list-container { display: flex; flex-direction: column; gap: 10px; }
+.empty { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 14px; }
+.empty i { font-size: 28px; margin-bottom: 10px; display: block; }
+
+.li { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.li-t { font-size: 14px; line-height: 1.5; color: var(--black); margin-bottom: 10px; cursor: pointer; }
+.li-f { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.li-i { display: flex; align-items: center; gap: 8px; }
+.li-a { display: flex; gap: 6px; margin-left: auto; }
+.bx { font-family: inherit; font-size: 12px; color: var(--gray); background: none; border: 1px solid transparent; border-radius: 5px; padding: 4px 8px; cursor: pointer; }
+.bx:hover { color: var(--black); border-color: var(--border); background: var(--input); }
+.bx.del:hover { color: #dc2626; border-color: #dc2626; }
+
+.settings-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+.settings-box h3 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.setting-row:last-child { border-bottom: none; }
+
+.profile-card { display: flex; flex-direction: column; gap: 10px; }
+.profile-field { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--border); align-items: center; }
+.profile-field span:first-child { font-weight: 600; color: var(--gray); }
+.profile-field input { max-width: 200px; padding: 6px 10px; font-size: 13px; border-radius: 6px; }
+
+.toast-c { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; }
+.toast { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 13px; color: var(--black); box-shadow: 0 4px 12px rgba(0,0,0,.1); display: flex; align-items: center; gap: 8px; animation: ti .25s ease, to .25s ease 2.3s forwards; }
+.toast.ok i { color: var(--green); }.toast.er i { color: #dc2626; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: sp .5s linear infinite; }
+
+.bouncing-dots { display: inline-flex; align-items: center; gap: 4px; }
+.bouncing-dots span { display: inline-block; width: 6px; height: 6px; background-color: var(--black); border-radius: 50%; animation: dot-bounce 1.2s infinite ease-in-out both; }
+.bouncing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.bouncing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+@keyframes ti { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes to { from { opacity: 1; } to { opacity: 0; transform: translateY(-6px); } }
+@keyframes fi { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+{% if auth_view %}
+<div class="auth-container" id="authGateway">
+  
+  <div class="auth-card" id="loginFormBlock">
+    <div class="auth-title">Welcome to Promptify</div>
+    <div class="sec"><label class="lbl">Username</label><input type="text" id="liUser" placeholder="Enter username"></div>
+    <div class="sec" style="margin-bottom: 8px;">
+      <label class="lbl">Password</label>
+      <div class="pass-container">
+        <input type="password" id="liPass" placeholder="Enter password">
+        <i class="fa-regular fa-eye eye-toggle" id="toggleLoginPass"></i>
+      </div>
+      <small class="pswd-strength-text" id="liPassStrength">Must be at least 7 characters</small>
+    </div>
+    <span class="forgot-link" id="forgotPassLink">Forgot password</span>
+    <button class="btn btn-p" id="loginSubmitBtn" style="width:100%; margin-top: 16px;">Sign In</button>
+    <a class="auth-toggle-link" id="toRegisterLink">Create an account &rarr;</a>
+  </div>
+
+  <div class="auth-card" id="forgotFormBlock" style="display:none">
+    <div class="auth-title">Reset Password</div>
+    
+    <div id="forgotStep1">
+      <div class="sec">
+        <label class="lbl">Enter your username</label>
+        <input type="text" id="fpUser" placeholder="Enter username">
+      </div>
+      <div class="sec">
+        <label class="lbl">Enter your registered email address</label>
+        <input type="email" id="fpEmail" placeholder="Enter email address">
+      </div>
+      <button class="btn btn-p" id="forgotNextBtn" style="width:100%">Verify Account</button>
+    </div>
+
+    <div id="forgotStep2" style="display:none">
+      <div class="sec">
+        <label class="lbl">Enter New password</label>
+        <div class="pass-container">
+          <input type="password" id="fpNewPass" placeholder="Enter New password">
+        </div>
+        <small class="pswd-strength-text" id="fpNewPassStrength">Must be at least 7 characters</small>
+      </div>
+      <button class="btn btn-p" id="forgotSubmitBtn" style="width:100%">Update</button>
+    </div>
+    
+    <a class="auth-toggle-link" id="backToLoginLink" style="margin-top: 16px;">Back to Account Sign In</a>
+  </div>
+
+  <div class="auth-card" id="registerFormBlock" style="display:none">
+    <div class="auth-title">Create Account</div>
+    <div class="sec"><label class="lbl">Username</label><input type="text" id="rgUser" placeholder="Enter username"></div>
+    <div class="sec">
+      <label class="lbl">Password</label>
+      <div class="pass-container">
+        <input type="password" id="rgPass" placeholder="Enter password">
+        <i class="fa-regular fa-eye eye-toggle" id="toggleRegPass"></i>
+      </div>
+      <small class="pswd-strength-text" id="rgPassStrength">Must be at least 7 characters</small>
+    </div>
+    <div class="sec"><label class="lbl">Full Name</label><input type="text" id="rgName" placeholder="Your Name"></div>
+    <div class="sec"><label class="lbl">Email Address</label><input type="text" id="rgEmail" placeholder="Enter email address"></div>
+    <div class="sec">
+      <label class="lbl">Gender</label>
+      <select id="rgGender"><option value="Male">Male</option><option value="Female">Female</option></select>
+    </div>
+    <button class="btn btn-p" id="registerSubmitBtn" style="width:100%">Register Profile</button>
+    <a class="auth-toggle-link" id="toLoginLink">Back to Account Sign In</a>
+  </div>
+</div>
+{% else %}
+
+<div class="sidebar">
+  <div class="logo">✧ Promptify</div>
+  <nav class="nav-links">
+    <button class="nav-item active" data-target="v-home" id="navHomeBtn"><span class="nav-title"><i class="fa-solid fa-house"></i>Home</span></button>
+    <button class="nav-item" data-target="v-history"><span class="nav-title"><i class="fa-solid fa-clock-rotate-left"></i>History</span><span class="nav-cnt" id="hc">0</span></button>
+    <button class="nav-item" data-target="v-saved"><span class="nav-title"><i class="fa-solid fa-floppy-disk"></i>Saved</span><span class="nav-cnt" id="sc">0</span></button>
+    <button class="nav-item" data-target="v-favorites"><span class="nav-title"><i class="fa-solid fa-bookmark"></i>Favorites</span><span class="nav-cnt" id="fc">0</span></button>
+    <button class="nav-item" data-target="v-settings"><span class="nav-title"><i class="fa-solid fa-gear"></i>Settings</span></button>
+    <button class="nav-item" id="logoutSidebarBtn" style="margin-top:auto;color:#dc2626"><span class="nav-title"><i class="fa-solid fa-power-off"></i>Logout</span></button>
+  </nav>
+</div>
+
+<div class="main-content">
+  
+  <div id="v-home" class="view-panel active">
+    <div class="welcome-banner" id="dashboardWelcomeBanner">Welcome back!</div>
+
+    <!-- Gamification Bar -->
+    <div class="gamification-bar">
+      <div class="g-stat"><span>Points ⭐:</span> <span id="gPoints">0</span></div>
+      <div class="g-stat"><span>Level 🏆:</span> <span id="gLevel">1</span></div>
+      <div class="g-stat"><span>Badge 🥇:</span> <span id="gBadge">Novice</span></div>
+      <div class="g-stat"><span>Streak 🔥:</span> <span id="gStreak">1 Day</span></div>
+    </div>
+
+    <div class="sec"><div class="lbl">Category</div>
+      <select id="cat"><option value="coding">Coding</option><option value="writing">Writing</option><option value="study">Study</option><option value="marketing">Marketing</option></select>
+    </div>
+    <div class="sec">
+      <div class="lbl-row">
+        <label class="lbl">Your Prompt Idea</label>
+        <span class="char-counter" id="charCounter">0 characters</span>
+      </div>
+      <textarea id="inp" placeholder="start typing..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-p" id="bGen"><i class="fa-solid fa-shuffle"></i> Build Prompt</button>
+      <button class="btn btn-s" id="bEnh"><i class="fa-solid fa-wand-magic-sparkles"></i> Improve Prompt</button>
+    </div>
+    
+    <div class="sec"><div class="lbl">Your Result</div>
+      <!-- Box matching Your Prompt Idea style -->
+      <div class="result-box-container">
+        <div class="card" id="card">
+          <div class="ph" id="ph">Nothing Generated Yet.</div>
+          <pre class="rt" id="rt"></pre>
+          <div class="meta" id="meta">
+            <span class="badge b-gen" id="bAct">Generated Output</span>
+            <span class="badge b-cat" id="bCat">Coding</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acts">
+      <button class="btn-g" id="bCopy"><i class="fa-regular fa-copy"></i> Copy</button>
+      <button class="btn-g" id="bSave"><i class="fa-regular fa-floppy-disk"></i> Save Collection</button>
+      <button class="btn-g" id="bFav"><i class="fa-regular fa-bookmark"></i> Favorite</button>
+      <button class="btn-g" id="bClr"><i class="fa-solid fa-trash"></i> Reset</button>
+    </div>
+  </div>
+
+  <div id="v-history" class="view-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2>Activity History</h2>
+      <button class="bx del" id="clearHistBtn"><i class="fa-solid fa-trash-can"></i> Clear History</button>
+    </div>
+    <div class="empty" id="he"><i class="fa-solid fa-clock-rotate-left"></i>No recent history found.</div>
+    <div id="hl" class="list-container"></div>
+  </div>
+
+  <div id="v-saved" class="view-panel">
+    <h2>Saved Directory Templates</h2>
+    <div class="empty" id="se"><i class="fa-solid fa-floppy-disk"></i>No elements configurations saved yet.</div>
+    <div id="sl" class="list-container"></div>
+  </div>
+
+  <div id="v-favorites" class="view-panel">
+    <h2>Pinned Favorites Collection</h2>
+    <div class="empty" id="fe"><i class="fa-solid fa-bookmark"></i>No bookmarked item logs found.</div>
+    <div id="fl" class="list-container"></div>
+  </div>
+
+  <div id="v-settings" class="view-panel">
+    <h2>Account Settings</h2>
+    <p style="color:var(--gray);margin-bottom:24px;font-size:14px">Manage profile parameters, appearance modes, and database logs.</p>
+
+    <div class="settings-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3><i class="fa-solid fa-user-gear"></i> Personal User Profile</h3>
+        <button class="btn btn-s" id="editProfileBtn" style="flex: none; width: auto; padding: 6px 12px; font-size: 12px;"><i class="fa-solid fa-pen"></i> Edit</button>
+      </div>
+      <div class="profile-card">
+        <div class="profile-field"><span>Full Name</span><span id="profName">...</span></div>
+        <div class="profile-field"><span>Email Address</span><span id="profEmail">...</span></div>
+        <div class="profile-field"><span>Gender Identity</span><span id="profGender">...</span></div>
+        <div class="profile-field"><span>Account Handle</span><span id="profUser">...</span></div>
+        <div class="profile-field" id="passwordRowField" style="display:none; flex-direction:column; align-items:flex-start; gap:4px;">
+          <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+            <span>Change Password</span>
+            <span id="profPassBox"><input type="password" id="profPassField" placeholder="New Password"></span>
+          </div>
+          <small class="pswd-strength-text" id="profPassStrength" style="margin-left:auto; text-align:right;">Must be at least 7 characters</small>
+        </div>
+      </div>
+      <button class="btn btn-p" id="saveProfileBtn" style="display: none; margin-top: 14px; padding: 8px 14px; font-size: 13px;">Save Changes</button>
+    </div>
+
+    <div class="settings-box">
+      <h3><i class="fa-solid fa-palette"></i> Display Preferences</h3>
+      <div class="setting-row">
+        <div><strong>Interface Theme Mode</strong></div>
+        <button class="btn btn-s" id="themeToggleBtn" style="flex:none;width:140px"><i class="fa-solid fa-moon"></i> Dark Mode</button>
+      </div>
+    </div>
+
+    <div class="settings-box" style="border-color: rgba(220,38,38,0.3)">
+      <h3 style="color:#dc2626"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone Management</h3>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:14px">These actions permanently delete your data and cannot be recovered.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-s" id="purgeAllDBBtn" style="border-color:#dc2626;color:#dc2626;font-weight:700"><i class="fa-solid fa-dumpster-fire"></i> Delete All Prompts</button>
+        <button class="btn btn-p" id="deleteAccountBtn" style="background:#dc2626;color:white"><i class="fa-solid fa-user-xmark"></i> Delete Account</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+<div class="toast-c" id="tc"></div>
+
+<script>
+const $=s=>document.getElementById(s);
+function toast(m,t='ok'){
+  const ic={ok:'fa-circle-check',er:'fa-circle-xmark','in':'fa-circle-info'},d=document.createElement('div');
+  d.className='toast '+t;d.innerHTML=`<i class="fa-solid ${ic[t]||ic.in}"></i><span>${m}</span>`;
+  $('tc').appendChild(d);setTimeout(()=>d.remove(),2800);
+}
+
+function calcStrength(val) {
+  if (!val) return { text: "Must be at least 7 characters", color: "var(--gray)" };
+  if (val.length < 7) return { text: `Weak: ${val.length}/7 characters`, color: "#dc2626" };
+  
+  let score = 0;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  
+  if (score <= 1) return { text: "Strong: Medium strength pattern", color: "#eab308" };
+  return { text: "Strong: Secure complex pattern", color: "var(--green)" };
+}
+
+function bindStrengthTracker(inputId, textId) {
+  if ($(inputId) && $(textId)) {
+    $(inputId).oninput = function() {
+      const state = calcStrength(this.value);
+      $(textId).textContent = state.text;
+      $(textId).style.color = state.color;
+    };
+  }
+}
+
+bindStrengthTracker('liPass', 'liPassStrength');
+bindStrengthTracker('rgPass', 'rgPassStrength');
+bindStrengthTracker('profPassField', 'profPassStrength');
+
+function setupPasswordMaskToggle(iconId, inputId) {
+  if($(iconId)) {
+    $(iconId).onclick = function() {
+      const field = $(inputId);
+      if(field.type === 'password') {
+        field.type = 'text'; this.className = 'fa-regular fa-eye-slash eye-toggle';
+      } else {
+        field.type = 'password'; this.className = 'fa-regular fa-eye eye-toggle';
+      }
+    };
+  }
+}
+setupPasswordMaskToggle('toggleLoginPass', 'liPass');
+setupPasswordMaskToggle('toggleRegPass', 'rgPass');
+
+if($('toRegisterLink')){
+  $('toRegisterLink').onclick=()=>{ $('loginFormBlock').style.display='none'; $('registerFormBlock').style.display='block'; };
+  $('toLoginLink').onclick=()=>{ $('registerFormBlock').style.display='none'; $('loginFormBlock').style.display='block'; };
+  
+  $('forgotPassLink').onclick=()=>{
+    $('loginFormBlock').style.display='none';
+    $('forgotFormBlock').style.display='block';
+    $('forgotStep1').style.display='block';
+    $('forgotStep2').style.display='none';
+    $('fpUser').value = "";
+    $('fpEmail').value = "";
+    $('fpNewPass').value = "";
+    $('fpNewPassStrength').textContent = "Must be at least 7 characters";
+    $('fpNewPassStrength').style.color = "var(--gray)";
+  };
+  $('backToLoginLink').onclick=()=>{ $('forgotFormBlock').style.display='none'; $('loginFormBlock').style.display='block'; };
+}
+
+if($('forgotNextBtn')){
+  $('forgotNextBtn').onclick=async()=>{
+    const user = $('fpUser').value.trim();
+    const email = $('fpEmail').value.trim();
+    if(!user || !email){ toast('Enter your username and email','er'); return; }
+    
+    const res = await fetch('/api/auth/verify-user', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: user, email: email})
+    });
+    
+    const data = await res.json();
+    if(res.ok || res.status === 200) {
+      $('forgotStep1').style.display='none';
+      $('forgotStep2').style.display='block';
+    } else {
+      toast(data.error || 'Combination credentials mismatch','er');
+    }
+  };
+
+  $('forgotSubmitBtn').onclick=async()=>{
+    const user = $('fpUser').value.trim();
+    const newPass = $('fpNewPass').value.trim();
+    if(!newPass){ toast('Enter New password','er'); return; }
+    if(newPass.length < 7){ toast('Password must be 7 characters or more','er'); return; }
+    
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: user, password: newPass})
+    });
+    
+    const data = await res.json();
+    if (res.ok) {
+        toast('Updated password successfully');
+        $('forgotFormBlock').style.display='none'; 
+        $('loginFormBlock').style.display='block';
+    } else {
+        toast(data.error || 'Could not reset password', 'er');
+    }
+  };
+}
+
+if($('registerSubmitBtn')){
+  $('registerSubmitBtn').onclick=async()=>{
+    const username = $('rgUser').value.trim(), password = $('rgPass').value.trim();
+    const name = $('rgName').value.trim(), email = $('rgEmail').value.trim(), gender = $('rgGender').value;
+    if(!username || !password || !name || !email){ toast('Please populate all fields','er'); return; }
+    if(password.length < 7){ toast('Password must be 7 characters or more','er'); return; }
+    
+    const res = await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,name,email,gender})});
+    const data = await res.json();
+    if(data.error){ toast(data.error,'er'); } else { toast(data.message); $('toLoginLink').click(); }
+  };
+}
+
+if($('loginSubmitBtn')){
+  $('loginSubmitBtn').onclick=async()=>{
+    const username = $('liUser').value.trim(), password = $('liPass').value.trim();
+    if(!username || !password){ toast('Complete fields to proceed','er'); return; }
+    if(password.length < 7){ toast('Password must be at least 7 characters','er'); return; }
+    
+    const res = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const data = await res.json();
+    if(data.error){ toast(data.error,'er'); } else { toast(data.message); window.location.reload(); }
+  };
+}
+
+if(!$('authGateway')){
+  let cur='', curC='', curA='', curSrc='', favs=[], saved=[], hist=[], isEditingProfile=false;
+
+  function updateGamificationUI(g) {
+    if(!g) return;
+    if($('gPoints')) $('gPoints').textContent = g.points;
+    if($('gLevel')) $('gLevel').textContent = g.level;
+    if($('gBadge')) $('gBadge').textContent = g.badge;
+    if($('gStreak')) $('gStreak').textContent = g.streak + ' Day' + (g.streak > 1 ? 's' : '');
+  }
+
+  async function loadGamification() {
+    const res = await fetch('/api/gamification');
+    if(res.ok){
+      const g = await res.json();
+      updateGamificationUI(g);
+    }
+  }
+
+  if($('inp') && $('charCounter')) {
+    $('inp').oninput = function() {
+      $('charCounter').textContent = this.value.length + " characters";
+    };
+  }
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.onclick = () => {
+      if(item.id === 'logoutSidebarBtn') return;
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+      item.classList.add('active'); $(item.dataset.target).classList.add('active');
+    };
+  });
+
+  $('logoutSidebarBtn').onclick=async()=>{
+    await fetch('/api/auth/logout',{method:'POST'}); window.location.reload();
+  };
+
+  async function loadProfile(){
+    const res = await fetch('/api/profile');
+    if(res.ok){
+      const d = await res.json();
+      $('profName').textContent = d.name; $('profEmail').textContent = d.email;
+      $('profGender').textContent = d.gender; $('profUser').textContent = d.username;
+      $('dashboardWelcomeBanner').textContent = "Welcome back, " + d.username + "!";
+    }
+  }
+
+  $('editProfileBtn').onclick = () => {
+    if(!isEditingProfile) {
+      isEditingProfile = true;
+      $('editProfileBtn').textContent = "Cancel";
+      $('saveProfileBtn').style.display = "block";
+      $('passwordRowField').style.display = "flex";
+      $('profPassField').value = "";
+      $('profPassStrength').textContent = "Must be at least 7 characters";
+      $('profPassStrength').style.color = "var(--gray)";
+      
+      bindStrengthTracker('profPassField', 'profPassStrength');
+      
+      const fields = ['profName', 'profEmail', 'profGender'];
+      fields.forEach(f => {
+        const span = $(f);
+        const currentVal = span.textContent;
+        if(f === 'profGender') {
+          span.innerHTML = `<select id="${f}Field" style="max-width:200px; padding:4px 8px;"><option value="Male">Male</option><option value="Female">Female</option></select>`;
+          $(`${f}Field`).value = currentVal;
+        } else {
+          span.innerHTML = `<input type="text" id="${f}Field" value="${currentVal}">`;
+        }
+      });
+    } else {
+      isEditingProfile = false;
+      $('editProfileBtn').textContent = "Edit";
+      $('saveProfileBtn').style.display = "none";
+      $('passwordRowField').style.display = "none";
+      loadProfile();
+    }
+  };
+
+  $('saveProfileBtn').onclick = async () => {
+    const updatedPayload = {
+      name: $('profNameField').value.trim(),
+      email: $('profEmailField').value.trim(),
+      gender: $('profGenderField').value
+    };
+    
+    const explicitPass = $('profPassField').value.trim();
+    if(explicitPass) {
+      if(explicitPass.length < 7){ toast('Password must be 7 characters or more','er'); return; }
+      updatedPayload.password = explicitPass;
+    }
+    
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(updatedPayload)
+    });
+    const data = await res.json();
+    
+    if (res.ok) {
+      toast('Changes saved successfully');
+    } else {
+      toast(data.error || 'Failed to update profile info', 'er');
+    }
+    
+    isEditingProfile = false;
+    $('editProfileBtn').textContent = "Edit";
+    $('saveProfileBtn').style.display = "none";
+    $('passwordRowField').style.display = "none";
+    loadProfile();
+  };
+
+  function loadState(b,v){
+    if(v){ b.dataset.oh=b.innerHTML; b.innerHTML='<span class="spinner"></span>'; b.disabled=true; }
+    else { b.innerHTML=b.dataset.oh||b.innerHTML; b.disabled=false; }
+  }
+
+  function showResult(t,c,a,s){
+    cur=t; curC=c; curA=a; curSrc=(s!==undefined?s:t); $('ph').style.display='none'; $('rt').style.display='block'; $('rt').textContent=t;
+    $('meta').style.display='flex'; $('card').classList.add('on');
+    $('bAct').className='badge '+(a==='generated'?'b-gen':'b-enh');
+    $('bAct').innerHTML='<i class="fa-solid fa-wand-magic-sparkles"></i> Generated output';
+    const cn={coding:'Coding',writing:'Writing',study:'Study',marketing:'Marketing',custom:'Custom'};
+    $('bCat').textContent=cn[c]||c;
+  }
+
+  $('bClr').onclick=()=> { cur=''; curC=''; curA=''; curSrc=''; $('ph').style.display='block'; $('rt').style.display='none'; $('meta').style.display='none'; $('card').classList.remove('on'); $('ph').textContent="Nothing generated yet."; $('inp').value=""; $('charCounter').textContent="0 characters"; toast('Fields reset','in'); };
+  function trunc(s,n=140){return s.length<=n?s:s.slice(0,n).trim()+'...'}
+
+  function handlePromptEdit(promptText, category) {
+    $('inp').value = promptText;
+    $('cat').value = category || 'coding';
+    $('charCounter').textContent = promptText.length + " characters";
+    $('navHomeBtn').click();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    toast('Prompt loaded into workspace for edits!', 'in');
+  }
+
+  function mkItem(it, src){
+    const d=document.createElement('div'); d.className='li';
+    const cn={coding:'Coding',writing:'Writing',study:'Study',marketing:'Marketing',custom:'Custom'};
+    
+    d.innerHTML=`<div class="li-t">${trunc(it.prompt)}</div>
+      <div class="li-f">
+        <div class="li-i"><span class="badge b-cat" style="font-size:9px">${cn[it.category]||it.category}</span><span class="badge b-gen" style="font-size:9px">Generated output</span></div>
+        <div class="li-a">
+          <button class="bx edit-item-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+          <button class="bx cp"><i class="fa-regular fa-copy"></i></button>
+          <button class="bx del"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+      </div>`;
+      
+    const srcText = (it.source_prompt !== undefined && it.source_prompt !== null && it.source_prompt !== '') ? it.source_prompt : it.prompt;
+    d.querySelector('.li-t').onclick=()=>{ showResult(it.prompt, it.category, it.action||'generated', srcText); $('navHomeBtn').click(); window.scrollTo({top:0,behavior:'smooth'}); };
+    d.querySelector('.edit-item-btn').onclick=e=>{ e.stopPropagation(); handlePromptEdit(srcText, it.category); };
+    d.querySelector('.cp').onclick=e=>{ e.stopPropagation(); navigator.clipboard.writeText(it.prompt).then(()=>toast('Copied')); };
+    d.querySelector('.del').onclick=async e=>{
+      e.stopPropagation();
+      const res = await fetch(`/api/${src}/${it.id}`, {method:'DELETE'});
+      const data = await res.json();
+      if (res.ok) {
+         toast('Item configuration dropped','in');
+      } else {
+         toast(data.error || 'Action failed','er');
+      }
+      if (src === 'favorites') loadFavs();
+      else if (src === 'saved') loadSaved();
+      else loadHist();
+    };
+    return d;
+  }
+
+  async function loadFavs(){
+    const res = await fetch('/api/favorites');
+    const r = await res.json(); 
+    if (res.ok) {
+       favs=r; $('fc').textContent=r.length; $('fe').style.display=r.length?'none':'block'; $('fl').innerHTML=''; r.forEach(x=>$('fl').appendChild(mkItem(x,'favorites')));
+    }
+  }
+  async function loadSaved(){
+    const res = await fetch('/api/saved');
+    const r = await res.json();
+    if (res.ok) {
+       saved=r; $('sc').textContent=r.length; $('se').style.display=r.length?'none':'block'; $('sl').innerHTML=''; r.forEach(x=>$('sl').appendChild(mkItem(x,'saved')));
+    }
+  }
+  async function loadHist(){
+    const res = await fetch('/api/history');
+    const r = await res.json();
+    if (res.ok) {
+       hist=r; $('hc').textContent=r.length; $('he').style.display=r.length?'none':'block'; $('hl').innerHTML=''; r.forEach(x=>$('hl').appendChild(mkItem(x,'history')));
+    }
+  }
+
+  $('bGen').onclick=async()=>{
+    loadState($('bGen'),1);
+    $('ph').style.display = 'block';
+    $('ph').innerHTML = '<div class="bouncing-dots"><span></span><span></span><span></span></div>';
+    $('rt').style.display = 'none';
+    $('meta').style.display = 'none';
+    
+    try{
+      const res = await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:$('cat').value,prompt:$('inp').value.trim()})});
+      const d = await res.json();
+      if (res.ok) {
+         showResult(d.prompt,d.category,'generated',d.source_prompt); toast('Prompt built'); loadHist();
+         if(d.gamification) updateGamificationUI(d.gamification);
+      } else {
+         toast(d.error || 'Generation failed','er');
+         $('ph').textContent = "Nothing generated yet.";
+      }
+    }catch(e){
+      toast('Could not connect to Promptify API','er');
+      $('ph').textContent = "Nothing generated yet.";
+    }
+    loadState($('bGen'),0);
+  };
+
+  $('bEnh').onclick=async()=>{
+    const t=$('inp').value.trim(); if(!t){ toast('Baseline text content required','er'); return; }
+    loadState($('bEnh'),1);
+    $('ph').style.display = 'block';
+    $('ph').innerHTML = '<div class="bouncing-dots"><span></span><span></span><span></span></div>';
+    $('rt').style.display = 'none';
+    $('meta').style.display = 'none';
+
+    try{
+      const res = await fetch('/api/enhance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:t,category:$('cat').value})});
+      const d = await res.json();
+      if (res.ok) {
+         showResult(d.prompt,d.category,'enhanced',d.source_prompt); toast('Optimized prompt built'); loadHist();
+         if(d.gamification) updateGamificationUI(d.gamification);
+      } else {
+         toast(d.error || 'Enhancement failed','er');
+         $('ph').textContent = "Nothing generated yet.";
+      }
+    }catch(e){
+      toast('Could not connect to Promptify API','er');
+      $('ph').textContent = "Nothing generated yet.";
+    }
+    loadState($('bEnh'),0);
+  };
+
+  $('bCopy').onclick=()=>{ if(!cur){toast('Nothing active to copy','er');return} navigator.clipboard.writeText(cur).then(()=>toast('Copied')); };
+  
+  $('bSave').onclick=async()=>{ 
+    if(!cur){toast('Context matrix empty','er');return} 
+    const res = await fetch('/api/saved',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:cur,category:curC,source_prompt:curSrc})}); 
+    const data = await res.json();
+    if (res.ok) {
+      toast(data.duplicate ? 'Already in Saved' : 'Added to saved lists', data.duplicate ? 'in' : 'ok'); loadSaved(); 
+    } else {
+      toast(data.error || 'Failed to save','er');
+    }
+  };
+  
+  $('bFav').onclick=async()=>{ 
+    if(!cur){toast('Context matrix empty','er');return} 
+    const res = await fetch('/api/favorites',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:cur,category:curC,source_prompt:curSrc})}); 
+    const data = await res.json();
+    if (res.ok) {
+       toast(data.duplicate ? 'Already in Favorites' : 'Added to favorites', data.duplicate ? 'in' : 'ok'); loadFavs(); 
+    } else {
+       toast(data.error || 'Failed to favorite','er');
+    }
+  };
+  
+  $('clearHistBtn').onclick=async()=>{ 
+    const res = await fetch('/api/history/clear',{method:'DELETE'}); 
+    const data = await res.json();
+    if (res.ok) {
+       toast('History wiped','in'); 
+    } else {
+       toast(data.error || 'Clear failed','er');
+    }
+    loadHist(); 
+  };
+
+  $('purgeAllDBBtn').onclick=async()=>{
+    if(confirm('This will permanently delete your prompt history, saved directory items, and benchmarks.\n\nProceed with prompt log wipe?')){
+      const res = await fetch('/api/settings/purge-databases',{method:'DELETE'});
+      const data = await res.json();
+      if (res.ok) {
+         toast('All prompt records purged successfully');
+         cur=''; curC=''; curSrc=''; $('ph').style.display='block'; $('ph').textContent="Nothing generated yet."; $('rt').style.display='none'; $('meta').style.display='none'; $('card').classList.remove('on');
+         loadHist(); loadFavs(); loadSaved();
+      } else {
+         toast(data.error || 'Purge operation error','er');
+      }
+    }
+  };
+
+  $('deleteAccountBtn').onclick=async()=>{
+    if(confirm('Permanently delete your account profile record trees?')){
+      const res = await fetch('/api/settings/delete-account',{method:'DELETE'}); 
+      if (res.ok) {
+         alert('Account completely deleted.'); window.location.reload();
+      } else {
+         const data = await res.json();
+         toast(data.error || 'Deletion dropped','er');
+      }
+    }
+  };
+
+  loadProfile(); loadFavs(); loadSaved(); loadHist(); loadGamification();
+}
+
+let currentTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', currentTheme);
+function updThemeUI(){ if($('themeToggleBtn')) $('themeToggleBtn').innerHTML = currentTheme === 'dark' ? '<i class="fa-solid fa-sun"></i> Light Mode' : '<i class="fa-solid fa-moon"></i> Dark Mode'; }
+if($('themeToggleBtn')){
+  updThemeUI();
+  $('themeToggleBtn').onclick=()=>{ currentTheme=currentTheme==='light'?'dark':'light'; document.documentElement.setAttribute('data-theme', currentTheme); localStorage.setItem('theme', currentTheme); updThemeUI(); toast(`Switched to ${currentTheme} layout`,'in'); };
+}
+</script>
+</body>
+</html>
