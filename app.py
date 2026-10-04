@@ -20,8 +20,7 @@ APINEX_URL = "https://api.apinex.bond/v1/chat/completions"
 
 MODEL = "free/deepseek-v4-pro-0813"
 
-def db():
-    conn = sqlite3.connect(DB)
+DB = "promptify.db"
 
 # ============================================================
 # FLASK APP
